@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>교과학점제 과목 안내</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1d2330;--sub:#667085;--line:#e3e6ec;--pri:#2f6fed;--priS:#e8f0ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1d222b;--tx:#e8ebf0;--sub:#9aa4b5;--line:#2c3340;--pri:#6b9bff;--priS:#22304f}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1d222b;--tx:#e8ebf0;--sub:#9aa4b5;--line:#2c3340;--pri:#6b9bff;--priS:#22304f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans KR",system-ui,-apple-system,sans-serif;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 2px}.sub{color:var(--sub);font-size:13px;margin:0 0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+input,select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--tx);font:inherit;font-size:14px}
+input{flex:1;min-width:160px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h3{margin:0 0 4px;font-size:15px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--priS);color:var(--pri);margin-right:4px}
+.card p{margin:6px 0;font-size:13px;color:var(--sub)}
+.meta{font-size:12px;color:var(--sub)}
+button.add{margin-top:6px;width:100%;padding:7px;border-radius:8px;border:1px solid var(--pri);background:transparent;color:var(--pri);cursor:pointer;font:inherit;font-size:13px}
+button.add.on{background:var(--pri);color:#fff}
+.sum{position:sticky;bottom:0;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sum b{color:var(--pri)}
+.prog{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin:6px 0}
+.prog i{display:block;height:100%;background:var(--pri);width:0}
+.list{font-size:13px;color:var(--sub);margin-top:4px}
+.note{font-size:12px;color:var(--sub);margin-top:14px}
+.empty{padding:30px;text-align:center;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📚 교과학점제 과목 안내</h1>
+  <p class="sub">과목을 검색·필터로 살펴보고, 관심 과목을 담아 이수 학점을 미리 계산해 보세요.</p>
+  <div class="bar">
+    <input id="q" placeholder="과목명·키워드 검색 (예: 통계, 의약, 코딩)">
+    <select id="grade"><option value="">학년 전체</option><option>1</option><option>2</option><option>3</option></select>
+    <select id="track"><option value="">진로 전체</option></select>
+  </div>
+  <div class="chips" id="types"></div>
+  <div class="grid" id="grid"></div>
+  <div class="sum">
+    <div>선택 <b id="cnt">0</b>과목 · <b id="cr">0</b>학점 <span class="meta">(졸업 이수 기준 총 192학점 중 교과 174학점)</span></div>
+    <div class="prog"><i id="bar"></i></div>
+    <div class="list" id="picked">담은 과목이 없습니다.</div>
+  </div>
+  <p class="note">※ 아래 과목 데이터는 예시입니다. 소스의 <code>COURSES</code> 배열을 학교 교육과정 편성표에 맞게 수정하세요. (학년·학기·학점·개설 여부·선수과목 등)</p>
+</div>
+<script>
+// ▼ 학교 실제 개설 과목으로 교체하세요
+const COURSES=[
+{n:"공통국어1",t:"공통",g:1,s:1,c:4,tr:["전체"],d:"말하기·읽기·쓰기의 기본 역량과 매체 활용 능력을 기릅니다."},
+{n:"공통수학1",t:"공통",g:1,s:1,c:4,tr:["전체"],d:"다항식, 방정식, 부등식, 경우의 수 등 수학 학습의 기초."},
+{n:"공통영어1",t:"공통",g:1,s:1,c:4,tr:["전체"],d:"일상·학습 상황의 영어 의사소통 능력을 기릅니다."},
+{n:"통합사회1",t:"공통",g:1,s:1,c:4,tr:["전체"],d:"인간·사회·환경을 통합적으로 이해합니다."},
+{n:"통합과학1",t:"공통",g:1,s:1,c:4,tr:["전체"],d:"물질·시스템·변화를 중심으로 과학 기초 개념을 학습합니다.",pre:""},
+{n:"대수",t:"일반선택",g:2,s:1,c:4,tr:["자연·공학","의약","경제·경영"],d:"지수·로그·삼각함수·수열 등 미적분 학습의 토대."},
+{n:"확률과 통계",t:"일반선택",g:2,s:2,c:4,tr:["사회","경제·경영","의약","교육"],d:"경우의 수, 확률, 통계적 추정으로 자료를 해석합니다."},
+{n:"화법과 언어",t:"일반선택",g:2,s:1,c:4,tr:["인문","사회","교육"],d:"의사소통과 언어의 본질을 탐구하고 토론·발표 역량을 기릅니다."},
+{n:"독서와 작문",t:"일반선택",g:2,s:2,c:4,tr:["인문","사회","교육"],d:"비판적 독서와 논리적 글쓰기 능력을 신장합니다."},
+{n:"물리학",t:"일반선택",g:2,s:1,c:4,tr:["자연·공학"],d:"역학·전자기·양자 등 물리 개념과 탐구 방법."},
+{n:"화학",t:"일반선택",g:2,s:2,c:4,tr:["자연·공학","의약"],d:"물질의 구조와 반응, 화학 결합의 원리."},
+{n:"생명과학",t:"일반선택",g:2,s:1,c:4,tr:["의약","자연·공학"],d:"세포, 유전, 항상성 등 생명 현상의 원리."},
+{n:"경제",t:"일반선택",g:2,s:2,c:4,tr:["경제·경영","사회"],d:"합리적 선택과 시장, 국민경제의 이해."},
+{n:"미적분Ⅰ",t:"일반선택",g:2,s:2,c:4,tr:["자연·공학","의약"],d:"함수의 극한, 미분과 적분의 기초."},
+{n:"기하",t:"진로선택",g:3,s:1,c:4,tr:["자연·공학"],d:"이차곡선, 벡터, 공간도형과 공간좌표."},
+{n:"인공지능 수학",t:"진로선택",g:3,s:1,c:4,tr:["자연·공학","교육"],d:"인공지능에 쓰이는 수학 개념과 데이터 분석."},
+{n:"영어 독해와 작문",t:"진로선택",g:3,s:1,c:4,tr:["인문","사회","교육"],d:"다양한 주제의 글을 읽고 영어로 표현합니다."},
+{n:"윤리와 사상",t:"진로선택",g:3,s:2,c:4,tr:["인문","사회","교육"],d:"동서양 사상과 현대 윤리 쟁점을 탐구합니다."},
+{n:"생명과학 실험",t:"진로선택",g:3,s:2,c:4,tr:["의약","자연·공학"],d:"실험 설계와 자료 해석 중심의 탐구 활동."},
+{n:"기후변화와 지속가능한 세계",t:"융합선택",g:3,s:1,c:4,tr:["사회","자연·공학"],d:"기후 위기를 과학·사회 관점에서 융합적으로 이해합니다."},
+{n:"데이터 분석과 코딩",t:"융합선택",g:3,s:2,c:4,tr:["자연·공학","경제·경영"],d:"공공 데이터를 수집·분석하고 시각화합니다."},
+{n:"인문학과 윤리",t:"융합선택",g:3,s:2,c:4,tr:["인문","교육"],d:"삶의 문제를 인문학적 시각으로 성찰합니다."}
+];
+const TOTAL=192,TYPES=["전체","공통","일반선택","진로선택","융합선택"];
+const st={type:"전체",picked:new Set()};
+const $=id=>document.getElementById(id);
+const tracks=[...new Set(COURSES.flatMap(c=>c.tr).filter(x=>x!=="전체"))];
+tracks.forEach(t=>$("track").add(new Option(t,t)));
+function chips(){$("types").innerHTML="";TYPES.forEach(t=>{const b=document.createElement("button");b.className="chip"+(st.type===t?" on":"");b.textContent=t;b.onclick=()=>{st.type=t;chips();render()};$("types").appendChild(b)})}
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+function render(){
+  const q=$("q").value.trim().toLowerCase(),g=$("grade").value,tr=$("track").value;
+  const list=COURSES.filter(c=>(st.type==="전체"||c.t===st.type)&&(!g||String(c.g)===g)&&(!tr||c.tr.includes(tr)||c.tr.includes("전체"))&&(!q||(c.n+c.d+c.tr.join()).toLowerCase().includes(q)));
+  $("grid").innerHTML=list.length?list.map(c=>`<div class="card"><h3>${esc(c.n)}</h3><span class="tag">${c.t}</span><span class="meta">${c.g}학년 ${c.s}학기 · ${c.c}학점</span><p>${esc(c.d)}</p><div class="meta">추천 진로: ${c.tr.join(", ")}</div><button class="add${st.picked.has(c.n)?" on":""}" data-n="${esc(c.n)}">${st.picked.has(c.n)?"✓ 담김":"+ 담기"}</button></div>`).join(""):'<div class="empty">조건에 맞는 과목이 없습니다.</div>';
+  document.querySelectorAll(".add").forEach(b=>b.onclick=()=>{const n=b.dataset.n;st.picked.has(n)?st.picked.delete(n):st.picked.add(n);render()});
+  const ps=COURSES.filter(c=>st.picked.has(c.n)),cr=ps.reduce((a,c)=>a+c.c,0);
+  $("cnt").textContent=ps.length;$("cr").textContent=cr;$("bar").style.width=Math.min(100,cr/TOTAL*100)+"%";
+  $("picked").textContent=ps.length?ps.map(c=>`${c.n}(${c.c})`).join(" · "):"담은 과목이 없습니다.";
+}
+["q","grade","track"].forEach(i=>$(i).addEventListener("input",render));
+chips();render();
+</script>
+</body>
+</html>
